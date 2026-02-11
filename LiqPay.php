@@ -31,15 +31,15 @@ class LiqPay
 {
     private $_api_url = 'https://www.liqpay.ua/api/';
     private $_checkout_url = 'https://www.liqpay.ua/api/3/checkout';
-    protected $_supportedCurrencies = array(
-        'EUR', 'USD', 'UAH');
-    protected $_supportedLangs = ['uk', 'ru', 'en'];
+    protected $_supportedCurrencies = ['EUR', 'USD', 'UAH'];
+    protected $_supportedLangs = ['uk', 'en'];
     private $_public_key;
     private $_private_key;
     private $_server_response_code = null;
 
+    private $_hashing_algorithm = 'sha1';
+
     protected $_button_translations = array(
-        'ru' => 'Оплатить',
         'uk' => 'Сплатити',
         'en' => 'Pay'
     );
@@ -221,6 +221,13 @@ class LiqPay
         if (!isset($params['action'])) {
             throw new InvalidArgumentException('action is null');
         }
+
+        if (intval($params['version']) >= 7) {
+            $this->_hashing_algorithm = 'sha3-256';
+        } else {
+            $this->_hashing_algorithm = 'sha1';
+        }
+
         return $params;
     }
     /**
@@ -284,7 +291,7 @@ class LiqPay
      */
     public function str_to_sign($str)
     {
-        $signature = base64_encode(sha1($str, 1));
+        $signature = base64_encode(hash($this->_hashing_algorithm, $str, true));
 
         return $signature;
     }
