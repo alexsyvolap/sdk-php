@@ -293,7 +293,7 @@ class LiqPay
     /**
      * get_hashing_algorithm
      *
-     * @param $version
+     * @param string|int $version
      *
      * @return string
      */
