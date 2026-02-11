@@ -37,8 +37,6 @@ class LiqPay
     private $_private_key;
     private $_server_response_code = null;
 
-    private $_hashing_algorithm = 'sha1';
-
     protected $_button_translations = array(
         'uk' => 'Сплатити',
         'en' => 'Pay'
@@ -104,7 +102,8 @@ class LiqPay
         $url = $this->_api_url . $path;
         $private_key = $this->_private_key;
         $data = $this->encode_params($params);
-        $signature = $this->str_to_sign($private_key . $data . $private_key);
+        $algo = $this->get_hashing_algorithm($params['version']);
+        $signature = $this->str_to_sign($private_key . $data . $private_key, $algo);
         $postfields = http_build_query(array(
             'data' => $data,
             'signature' => $signature
@@ -194,7 +193,8 @@ class LiqPay
         $private_key = $this->_private_key;
 
         $json = $this->encode_params($params);
-        $signature = $this->str_to_sign($private_key . $json . $private_key);
+        $algo = $this->get_hashing_algorithm($params['version']);
+        $signature = $this->str_to_sign($private_key . $json . $private_key, $algo);
 
         return $signature;
     }
@@ -220,12 +220,6 @@ class LiqPay
 
         if (!isset($params['action'])) {
             throw new InvalidArgumentException('action is null');
-        }
-
-        if (intval($params['version']) >= 7) {
-            $this->_hashing_algorithm = 'sha3-256';
-        } else {
-            $this->_hashing_algorithm = 'sha1';
         }
 
         return $params;
@@ -289,11 +283,23 @@ class LiqPay
      *
      * @return string
      */
-    public function str_to_sign($str)
+    public function str_to_sign($str, $algo = 'sha1')
     {
-        $signature = base64_encode(hash($this->_hashing_algorithm, $str, true));
+        $signature = base64_encode(hash($algo, $str, true));
 
         return $signature;
+    }
+
+    /**
+     * get_hashing_algorithm
+     *
+     * @param $version
+     *
+     * @return string
+     */
+    private function get_hashing_algorithm($version)
+    {
+        return (intval($version) >= 7) ? 'sha3-256' : 'sha1';
     }
 }
 
